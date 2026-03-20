@@ -702,7 +702,7 @@ const Dashboard = () => {
       <div className="flex items-center gap-4">
         <img src="/logo.png" alt="Logo" className="w-16 h-16 rounded-2xl shadow-lg border-2 border-white dark:border-slate-700" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">Welcome Back, Cricket HUB</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">Welcome Back, Cricket Lovers</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Here's what's happening in your cricket network today.</p>
         </div>
       </div>
