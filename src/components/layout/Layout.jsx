@@ -32,6 +32,7 @@ const Layout = () => {
   const navLinks = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/leagues', label: 'Leagues', icon: Trophy },
+    { path: '/series', label: 'Series', icon: Trophy },
     { path: '/teams', label: 'Teams', icon: Users },
     { path: '/players', label: 'Players', icon: UserCircle },
     { path: '/scoring', label: 'Live Scoring', icon: Activity },

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Users, Activity, CheckCircle, ChevronRight, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { useMockData } from '../context/MockDataContext';
 import LiveScoring from './LiveScoring';
 
 const OVER_OPTIONS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
@@ -419,6 +421,9 @@ const STORAGE_KEY = 'cricscorer_live_v2';
 
 // ---------- MAIN ----------
 const Scoring = () => {
+  const location = useLocation();
+  const { leagues, series, teams, players } = useMockData();
+  
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     team1: '',
@@ -432,28 +437,74 @@ const Scoring = () => {
     targetScore: 0,
   });
   const [matchStarted, setMatchStarted] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Auto-resume logic
-  React.useEffect(() => {
+  // Auto-resume logic & Source initialization
+  useEffect(() => {
+    // If coming from Leagues/Series navigation with pre-filled state
+    const sourceInfo = location.state?.sourceInfo;
+    
+    if (sourceInfo && !isInitialized) {
+      let t1 = null, t2 = null;
+      if (sourceInfo.type === 'series') {
+        const s = series.find(x => x.id === sourceInfo.id);
+        if (s) {
+          t1 = teams.find(t => t.id === s.team1Id);
+          t2 = teams.find(t => t.id === s.team2Id);
+        }
+      } else if (sourceInfo.type === 'league') {
+        const l = leagues.find(x => x.id === sourceInfo.id);
+        if (l && l.teams && l.teams.length >= 2) {
+          // Just grab first two teams for now, or maybe they select them beforehand. 
+          // Since there is no matchup selection screen, we'll just pick first 2.
+          t1 = teams.find(t => t.id === l.teams[0]);
+          t2 = teams.find(t => t.id === l.teams[1]);
+        }
+      }
+
+      if (t1 && t2) {
+        // Find players for these teams
+        const p1 = players.filter(p => p.teamId === t1.id).map(p => ({ id: p.id, name: p.name }));
+        const p2 = players.filter(p => p.teamId === t2.id).map(p => ({ id: p.id, name: p.name }));
+        
+        // Pad them to 11 if needed
+        const padTo11 = (arr) => {
+          const res = [...arr];
+          while (res.length < 11) {
+            res.push({ id: Date.now() + Math.random(), name: '' });
+          }
+          return res;
+        };
+
+        setForm(prev => ({
+          ...prev,
+          team1: t1.name,
+          team2: t2.name,
+          players1: padTo11(p1).slice(0, Math.max(11, p1.length)),
+          players2: padTo11(p2).slice(0, Math.max(11, p2.length))
+        }));
+      }
+      setIsInitialized(true);
+      return; 
+    }
+
+    // Otherwise standard resume logic
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
+      if (saved && !isInitialized) {
         const parsed = JSON.parse(saved);
         if (parsed.configKey && !parsed.matchOver) {
           if (parsed.config) {
             setForm(parsed.config);
-            // Wait for form to be set or use functional update if needed,
-            // but for matchStarted we can just set it true.
-            // Actually, LiveScoring will read from localStorage itself if we want,
-            // but it's better if everything is synced.
             setMatchStarted(true);
           }
         }
+        setIsInitialized(true);
       }
     } catch (e) {
       console.error("Failed to load session", e);
     }
-  }, []);
+  }, [location.state, series, leagues, teams, players, isInitialized]);
 
   const handleChange = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
